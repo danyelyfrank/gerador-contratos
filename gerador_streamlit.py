@@ -2,13 +2,34 @@ import streamlit as st
 from fpdf import FPDF
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import re
+
+# Função para formatar CPF
+def formatar_cpf(cpf):
+    cpf = re.sub(r'\D', '', cpf)
+    if len(cpf) == 11:
+        return f"{cpf[:3]}.{cpf[3:6]}.{cpf[6:9]}-{cpf[9:]}"
+    return None
+
+# Função para formatar CNPJ
+def formatar_cnpj(cnpj):
+    cnpj = re.sub(r'\D', '', cnpj)
+    if len(cnpj) == 14:
+        return f"{cnpj[:2]}.{cnpj[2:5]}.{cnpj[5:8]}/{cnpj[8:12]}-{cnpj[12:]}"
+    return None
+
+# Função para converter valor para extenso
+def valor_por_extenso(valor):
+    import num2words
+    valor_float = float(valor.replace('.', '').replace(',', '.'))
+    valor_inteiro = int(valor_float)
+    return num2words.num2words(valor_inteiro, lang='pt_BR').upper()
 
 # Função para gerar o PDF
 def gerar_pdf(dados):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-
     pdf.cell(0, 10, dados['titulo_capa'], ln=True, align="C")
     pdf.ln(10)
 
@@ -44,68 +65,88 @@ Para dirimir quaisquer dúvidas oriundas deste contrato, fica eleito o foro da C
     pdf.multi_cell(0, 8, contrato.strip())
     return pdf.output(dest='S').encode('latin1')
 
-# Função para converter valor para extenso
-def valor_por_extenso(valor):
-    import num2words
-    valor_float = float(valor.replace('.', '').replace(',', '.'))
-    valor_inteiro = int(valor_float)
-    return num2words.num2words(valor_inteiro, lang='pt_BR').upper()
+# ========== Streamlit App ==========
+st.set_page_config(page_title="Gerador de Contratos", page_icon="📝")
+st.title("📝 Gerador de Contratos Automático")
+st.markdown("---")
 
-# Streamlit App
-st.title("📝 Gerador de Contratos")
-
-# Escolha do tipo de contrato
-st.subheader("Tipo de Termo")
-tipo_termo = st.selectbox("Escolha o tipo de contrato:", ["Prestacão de Serviço", "Outro"])
+# Tipo do Termo
+st.subheader("📑 Tipo de Termo")
+tipo_termo = st.selectbox("Escolha o tipo de contrato:", ["Prestação de Serviço", "Outro"])
 
 if tipo_termo == "Outro":
     titulo_capa = st.text_input("Digite o nome do termo:").upper()
 else:
     titulo_capa = "TERMO DE PRESTAÇÃO DE SERVIÇOS"
 
-st.subheader("Dados do Contratante")
-nome_contratante = st.text_input("Nome completo do(a) contratante:")
-estado_civil_contratante = st.text_input("Estado civil do(a) contratante:")
-rg_contratante = st.text_input("RG do(a) contratante:")
-tipo_doc_contratante = st.selectbox("Documento do Contratante:", ["CPF", "CNPJ"])
-doc_contratante = st.text_input(f"Número do {tipo_doc_contratante} do contratante:")
-endereco_contratante = st.text_input("Endereço do(a) contratante:")
+# Dados do Contratante
+with st.container():
+    st.subheader("🧍‍♂️ Dados do Contratante")
+    nome_contratante = st.text_input("Nome completo do(a) contratante:")
+    estado_civil_contratante = st.text_input("Estado civil do(a) contratante:")
+    rg_contratante = st.text_input("RG do(a) contratante:")
+    tipo_doc_contratante = st.selectbox("Documento do Contratante:", ["CPF", "CNPJ"])
+    doc_contratante = st.text_input(f"Número do {tipo_doc_contratante} do contratante:")
 
-st.subheader("Dados do Contratado")
-nome_contratado = st.text_input("Nome completo do(a) contratado(a):")
-nacionalidade_contratado = st.text_input("Nacionalidade do(a) contratado(a):")
-estado_civil_contratado = st.text_input("Estado civil do(a) contratado(a):")
-rg_contratado = st.text_input("RG do(a) contratado(a):")
-tipo_doc_contratado = st.selectbox("Documento do Contratado:", ["CPF", "CNPJ"])
-doc_contratado = st.text_input(f"Número do {tipo_doc_contratado} do contratado:")
-endereco_contratado = st.text_input("Endereço do(a) contratado(a):")
+    if tipo_doc_contratante == "CPF" and doc_contratante:
+        doc_contratante = formatar_cpf(doc_contratante) or doc_contratante
+    if tipo_doc_contratante == "CNPJ" and doc_contratante:
+        doc_contratante = formatar_cnpj(doc_contratante) or doc_contratante
 
-st.subheader("Dados do Contrato")
-servico = st.text_area("Serviço contratado:")
-valor = st.text_input("Valor do serviço (ex: 2.000,00):")
-forma_pagamento = st.text_input("Forma de pagamento:")
-tempo_servico = st.text_input("Tempo de serviço (ex: '6 meses' ou '180 dias'):")
-data_inicio = st.text_input("Data de início (ex: 01/05/2025):")
-data_termino = ""
-if data_inicio and tempo_servico:
-    try:
-        inicio = datetime.strptime(data_inicio, "%d/%m/%Y")
-        quantidade, unidade = tempo_servico.split()
-        quantidade = int(quantidade)
-        if "mes" in unidade:
-            termino = inicio + relativedelta(months=quantidade)
-        else:
-            termino = inicio + relativedelta(days=quantidade)
-        data_termino = termino.strftime("%d/%m/%Y")
-    except:
-        pass
-cidade = st.text_input("Cidade do foro:")
-estado = st.text_input("Estado (sigla, ex: RR):")
-dias_rescisao = st.text_input("Dias de aviso prévio para rescisão:")
+    endereco_contratante = st.text_input("Endereço do(a) contratante:")
 
-# Botão para gerar contrato
-if st.button("📄 Gerar Contrato"):
-    if all([nome_contratante, rg_contratante, doc_contratante, endereco_contratante, nome_contratado, nacionalidade_contratado, estado_civil_contratado, rg_contratado, doc_contratado, endereco_contratado, servico, valor, forma_pagamento, tempo_servico, data_inicio, cidade, estado, dias_rescisao]):
+# Dados do Contratado
+with st.container():
+    st.subheader("🧍‍♀️ Dados do Contratado")
+    nome_contratado = st.text_input("Nome completo do(a) contratado(a):")
+    nacionalidade_contratado = st.text_input("Nacionalidade do(a) contratado(a):")
+    estado_civil_contratado = st.text_input("Estado civil do(a) contratado(a):")
+    rg_contratado = st.text_input("RG do(a) contratado(a):")
+    tipo_doc_contratado = st.selectbox("Documento do Contratado:", ["CPF", "CNPJ"])
+    doc_contratado = st.text_input(f"Número do {tipo_doc_contratado} do contratado:")
+
+    if tipo_doc_contratado == "CPF" and doc_contratado:
+        doc_contratado = formatar_cpf(doc_contratado) or doc_contratado
+    if tipo_doc_contratado == "CNPJ" and doc_contratado:
+        doc_contratado = formatar_cnpj(doc_contratado) or doc_contratado
+
+    endereco_contratado = st.text_input("Endereço do(a) contratado(a):")
+
+# Dados do Contrato
+with st.container():
+    st.subheader("📄 Informações do Contrato")
+    servico = st.text_area("Serviço contratado:")
+    valor = st.text_input("Valor do serviço (ex: 2.000,00):")
+    forma_pagamento = st.text_input("Forma de pagamento:")
+    tempo_servico = st.text_input("Tempo de serviço (ex: '6 meses' ou '180 dias'):")
+    data_inicio = st.text_input("Data de início (ex: 01/05/2025):")
+
+    data_termino = ""
+    if data_inicio and tempo_servico:
+        try:
+            inicio = datetime.strptime(data_inicio, "%d/%m/%Y")
+            quantidade, unidade = tempo_servico.split()
+            quantidade = int(quantidade)
+            if "mes" in unidade:
+                termino = inicio + relativedelta(months=quantidade)
+            else:
+                termino = inicio + relativedelta(days=quantidade)
+            data_termino = termino.strftime("%d/%m/%Y")
+        except:
+            pass
+
+    cidade = st.text_input("Cidade do foro:")
+    estado = st.text_input("Estado (sigla, ex: RR):")
+    dias_rescisao = st.text_input("Dias de aviso prévio para rescisão:")
+
+st.markdown("---")
+
+# Botão para gerar
+if st.button("🚀 Gerar Contrato"):
+    if all([nome_contratante, estado_civil_contratante, rg_contratante, doc_contratante,
+            endereco_contratante, nome_contratado, nacionalidade_contratado, estado_civil_contratado,
+            rg_contratado, doc_contratado, endereco_contratado, servico, valor, forma_pagamento,
+            tempo_servico, data_inicio, cidade, estado, dias_rescisao]):
 
         dados = {
             'titulo_capa': titulo_capa,
@@ -137,6 +178,7 @@ if st.button("📄 Gerar Contrato"):
 
         pdf_bytes = gerar_pdf(dados)
 
+        st.balloons()  # 🎈🎈 Animação de balões
         st.success("✅ Contrato gerado com sucesso!")
 
         st.download_button(
@@ -146,4 +188,5 @@ if st.button("📄 Gerar Contrato"):
             mime="application/pdf"
         )
     else:
-        st.error("⚠️ Por favor, preencha todos os campos corretamente!")
+        st.error("⚠️ Por favor, preencha todos os campos corretamente antes de gerar o contrato.")
+
