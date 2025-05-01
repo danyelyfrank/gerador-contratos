@@ -1,0 +1,17 @@
+# NÃO ENVIAR ARQUIVOS SENSÍVEIS OU DESNECESSÁRIOS
+
+# Arquivo com variáveis secretas (como sua senha do Gmail)
+.env
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Pastas específicas do VS Code e ambiente local
+.vscode/
+*.db
+
+# Arquivos de log (caso use no futuro)
+*.log
