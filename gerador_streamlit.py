@@ -4,21 +4,16 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from babel.dates import format_date
 import re
-import yagmail
+import smtplib
+from email.message import EmailMessage
 from dotenv import load_dotenv
 import os
-import unicodedata  # ✅ para normalizar os caracteres especiais
+import unicodedata
 
-# 🔐 Usa secrets no Streamlit Cloud
-if "EMAIL_REMETENTE" in st.secrets:
-    EMAIL_REMETENTE = st.secrets["EMAIL_REMETENTE"]
-    SENHA_EMAIL = st.secrets["SENHA_EMAIL"]
-else:
-    from dotenv import load_dotenv
-    load_dotenv()
-    EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
-    SENHA_EMAIL = os.getenv("SENHA_EMAIL")
-
+# 🔐 Carrega variáveis de ambiente
+load_dotenv()
+EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
+SENHA_EMAIL = os.getenv("SENHA_EMAIL")
 
 # ========= Funções =========
 def formatar_cpf(cpf):
@@ -39,7 +34,6 @@ def valor_por_extenso(valor):
     valor_inteiro = int(valor_float)
     return num2words.num2words(valor_inteiro, lang='pt_BR').upper()
 
-# ✅ nova função para limpar caracteres que causam erro no PDF
 def limpar_texto(texto):
     texto = texto.replace("–", "-").replace("“", '"').replace("”", '"')
     return unicodedata.normalize("NFKD", texto).encode("latin1", "ignore").decode("latin1")
@@ -53,10 +47,14 @@ def gerar_pdf_com_texto(texto):
     return pdf.output(dest='S').encode('latin1')
 
 def enviar_email(destinatario, assunto, corpo, anexo_bytes, nome_arquivo):
-    yag = yagmail.SMTP(EMAIL_REMETENTE, SENHA_EMAIL)
-    yag.send(
-        to=destinatario,
-        subject=assunto,
-        contents=corpo,
-        attachments=(nome_arquivo, anexo_bytes)
-    )
+    msg = EmailMessage()
+    msg['Subject'] = assunto
+    msg['From'] = EMAIL_REMETENTE
+    msg['To'] = destinatario
+    msg.set_content(corpo)
+
+    msg.add_attachment(anexo_bytes, maintype='application', subtype='pdf', filename=nome_arquivo)
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(EMAIL_REMETENTE, SENHA_EMAIL)
+        smtp.send_message(msg)
