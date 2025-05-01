@@ -3,3 +3,5 @@ fpdf
 num2words
 babel
 python-dateutil
+python-dotenv
+yagmail
