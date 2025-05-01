@@ -43,3 +43,8 @@ build/
 
 # 📦 Arquivos de log (caso você use no futuro)
 *.log
+
+echo ".devcontainer/" >> .gitignore
+git add .gitignore
+git commit -m "Adiciona .devcontainer ao .gitignore"
+git push
