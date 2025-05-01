@@ -9,10 +9,16 @@ from dotenv import load_dotenv
 import os
 import unicodedata  # ✅ para normalizar os caracteres especiais
 
-# 🔐 Carrega variáveis do .env
-load_dotenv()
-EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
-SENHA_EMAIL = os.getenv("SENHA_EMAIL")
+# 🔐 Usa secrets no Streamlit Cloud
+if "EMAIL_REMETENTE" in st.secrets:
+    EMAIL_REMETENTE = st.secrets["EMAIL_REMETENTE"]
+    SENHA_EMAIL = st.secrets["SENHA_EMAIL"]
+else:
+    from dotenv import load_dotenv
+    load_dotenv()
+    EMAIL_REMETENTE = os.getenv("EMAIL_REMETENTE")
+    SENHA_EMAIL = os.getenv("SENHA_EMAIL")
+
 
 # ========= Funções =========
 def formatar_cpf(cpf):
