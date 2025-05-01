@@ -15,3 +15,31 @@ __pycache__/
 
 # Arquivos de log (caso use no futuro)
 *.log
+
+# ❌ Arquivos com dados sensíveis
+.env
+
+# 🧪 Pastas de estudo e testes
+curso_python/
+
+# 📄 Contratos gerados que não devem ser versionados
+contrato_gerado.txt
+dist/
+dist/contrato_Danyely_2025-04-26_23-31-13.pdf
+dist/contrato_Felipe_Augusto_Monteiro__2025-04-26_23-01-52.pdf
+
+# 🧠 Arquivos temporários do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 🛠 Arquivos de build e empacotamento (ex: pyinstaller)
+build/
+*.spec
+
+# ⚙️ Arquivos e pastas de configuração do VS Code
+.vscode/
+
+# 📦 Arquivos de log (caso você use no futuro)
+*.log
